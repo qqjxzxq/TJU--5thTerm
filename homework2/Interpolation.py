@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 from sympy import symbols, sin, cos, lambdify
 
 plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
@@ -11,9 +12,12 @@ class Interpolation:
         self.num_points = num_points
         self.func_params = func_params
         self.exp_points = exp_points
+        self.pi = np.pi
+
         self.t = symbols('t')  # 定义符号变量
         self.x = self.chebyshev_nodes()
         self.y = self.compute_function_values()
+        
     
     #使用chebyshev采样n+1个点    
     def chebyshev_nodes(self):
@@ -35,7 +39,27 @@ class Interpolation:
             
     
 #Vandermonde
-#def Vandermonde()
+    def Vandermonde(self):
+    # 初始化 Vandermonde 矩阵
+        X = np.zeros((self.num_points, self.num_points))
+        for i in range(self.num_points):
+                for j in range(self.num_points):
+                    X[i][j] = np.pow(self.x[i], j)
+    
+    # 构造系数矩阵 Y
+        Y = np.array(self.y).reshape(-1, 1)  # 转换为列向量
+
+    # 解线性方程组
+        A = np.linalg.solve(X, Y)
+
+    # 计算多项式值 P
+        def polynomial(x):
+            P = 0
+            for i in range(self.num_points):
+                P += A[i][0] * np.power(x, i)
+            return P
+
+        return polynomial
 
 
 #Lagrange
