@@ -34,7 +34,7 @@ class Interpolation:
         #     print(f"点: x = {point[0]}, y = {point[1]}")
             
     
-    #Vandermonde
+#Vandermonde
 #def Vandermonde()
 
 
@@ -65,8 +65,8 @@ m = int(input("输入实验点个数 m ："))
 # 构造插值对象
 interp = Interpolation(start=int(a), end=int(b), num_points=n + 1, func_params=(c, d, e, f), exp_points= m)
 
-# # 显示生成的点
-# interp.display_points()
+# 显示生成的点
+interp.display_points()
 
 
 
