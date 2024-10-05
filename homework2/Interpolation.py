@@ -15,6 +15,8 @@ class Interpolation:
         self.points = None
         self.exp_points = exp_points
         self.pi = np.pi
+        self.m_node_x = np.zeros(self.exp_points)
+        self.m_node_y = np.zeros(self.exp_points)
 
         self.t = symbols('t')  # 定义符号变量
         self.x, self.y = self.UniformSampling() # 1 使用均匀采样
@@ -35,7 +37,7 @@ class Interpolation:
         
         self.points = list(zip(self.x, self.y))
         for point in self.points:
-            print(f"点: x = {point[0]}, y = {point[1]}")
+            print(f"采样点: x = {point[0]}, 标准值：y = {point[1]}")
         
         return self.x, self.y
     
@@ -76,20 +78,23 @@ class Interpolation:
         
         for i in range(self.num_points):
             P += A[i][0] * np.power(x, i)
-            print("插值结果：x = ", self.x[i] , ", y = ", P)
+        
+        print("范德蒙德插值结果：x = ", x , ", y = ", P)
             
         return P
     
 
     def VandermondeError(self):
         #随机选取m个点
-        N = range(self.start, self.end)
-        node = random.sample(N, self.exp_points)
+        N = np.linspace(self.start, self.end, max(self.exp_points * 10, self.exp_points))
+        self.m_node_x = random.sample(list(N), self.exp_points)
+        print("random")
         Rn = []
-        for i in range(self.exp_points):  
-            error = self.func(node[i]) - self.Vandermonde(node[i])
+        for i in range(self.exp_points): 
+            self.m_node_y[i] = self.Vandermonde(self.m_node_x[i])
+            error = self.func(self.m_node_x[i]) - self.m_node_y[i]
             Rn.append(error)
-            print("x = " , node[i] , "误差R = " , Rn[i])
+            print("x = " , self.m_node_x[i] , "误差R = " , Rn[i])
         
         mean = np.mean(Rn)
         print("范德蒙德多项式插值平均误差：", mean)
@@ -125,13 +130,13 @@ class Interpolation:
         exp_y_interp1 = np.zeros(self.exp_points)
         i = 0
         for i in range(exp_x.size):
-            exp_y_target[i] = self.func(exp_x[i])  # 目标函数值
-            exp_y_interp1[i] = self.Vandermonde(exp_x[i])  # 插值函数值
+            exp_y_target[i] = self.func(self.m_node_x[i])  # 目标函数值
+            exp_y_interp1[i] = self.m_node_y[i]  # 插值函数值
     
     # 绘制目标函数和插值函数
         plt.figure(figsize=(10, 6))
-        plt.plot(exp_x, exp_y_target, label='目标函数', color='blue')
-        plt.plot(exp_x, exp_y_interp1, label='插值函数', color='red', linestyle='--')
+        plt.plot(self.m_node_x, exp_y_target, label='目标函数', color='blue')
+        plt.plot(self.m_node_x, exp_y_interp1, label='插值函数', color='red', linestyle='--')
     
     # 绘制误差
         error = exp_y_target - exp_y_interp1
