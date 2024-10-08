@@ -20,15 +20,20 @@ class Interpolation:
         self.m_Vandermonde_y = np.zeros(self.exp_points)
         self.m_lagrange_y = np.zeros(self.exp_points)
         self.m_Newton_y = np.zeros(self.exp_points)
+        self.m_Piecewiselinear_y = np.zeros(self.exp_points) 
+        self.m_Hermite_y = np.zeros(self.exp_points)  
         
         self.MEAN = np.zeros(5) #五种插值方法的平均误差
 
         self.x, self.y = self.UniformSampling() # 1 使用均匀采样
-        #self.x, self.y = self.chebyshev_sampling() # 2 使用切比雪夫采样
+        # self.x, self.y = self.chebyshev_sampling() # 2 使用切比雪夫采样
         self.Random_m_exp = self.Random_m_exp() # 随机采样m个实验点
         self.VandermondeResult = self.VandermondeError() # 计算范德蒙德多项式插值及其误差
         self.lagrangeResult = self.lagrangeError() # 计算拉格朗日插值及其误差
         self.NewtonResult = self.NewtonError() # 计算牛顿插值及其误差 
+        self.PiecewiselinearResult = self.PiecewiselinearError() # 计算分段线性插值及误差  
+        self.HermiteResult = self.HermiteError() # 计算Hermite插值及其误差
+        
         self.plot = self.plot_interpolation_vs_target() # 画图
         
     def func(self, x):
@@ -57,7 +62,7 @@ class Interpolation:
             nodes.append(x_i)
     
         self.x = np.array(nodes)
-        self.y = func(self.x)
+        self.y = self.func(self.x)
     
         self.points = list(zip(self.x, self.y))
         for point in self.points:
@@ -94,7 +99,7 @@ class Interpolation:
         for i in range(self.num_points):
             P += A[i][0] * np.power(x, i)
         
-        print("范德蒙德插值结果：x = ", x , ", y = ", P)
+        # print("范德蒙德插值结果：x = ", x , ", y = ", P)
             
         return P
     
@@ -106,7 +111,7 @@ class Interpolation:
             self.m_Vandermonde_y[i] = self.Vandermonde(self.m_node_x[i])
             error = abs(self.func(self.m_node_x[i]) - self.m_Vandermonde_y[i])
             Rn.append(error)
-            print("x = " , self.m_node_x[i] , "误差R = " , Rn[i])
+            # print("x = " , self.m_node_x[i] , "误差R = " , Rn[i])
         
         mean = np.mean(Rn)
         self.MEAN[0] = mean
@@ -136,7 +141,7 @@ class Interpolation:
         # 累加到多项式中
             ln += (self.y[k] * base)
         
-        print("拉格朗日插值结果：x = ", x , ", y = ", ln)
+        # print("拉格朗日插值结果：x = ", x , ", y = ", ln)
     
         return ln
 
@@ -148,14 +153,13 @@ class Interpolation:
             self.m_lagrange_y[i] = self.lagrange(self.m_node_x[i])
             error = abs(self.func(self.m_node_x[i]) - self.m_lagrange_y[i])
             Rn.append(error)
-            print("x = " , self.m_node_x[i] , "误差R = " , Rn[i])
+            # print("x = " , self.m_node_x[i] , "误差R = " , Rn[i])
         
         mean = np.mean(Rn)
         self.MEAN[1] = mean
         print("拉格朗日多项式插值平均误差：", mean)
 
 #Newton
-
 
     def Newton(self, x):
     # 1. 计算均差表
@@ -181,7 +185,7 @@ class Interpolation:
                 product *= (x - self.x[j])  # 构造 (value - x_j) 的乘积项
             f_value += tem * product  # 累加插值结果
         
-        print("牛顿插值结果：x = ", x , ", y = ", f_value) 
+        # print("牛顿插值结果：x = ", x , ", y = ", f_value) 
         return f_value
     
     
@@ -191,7 +195,7 @@ class Interpolation:
             self.m_Newton_y[i] = self.Newton(self.m_node_x[i])
             error = abs(self.func(self.m_node_x[i]) - self.m_Newton_y[i])
             Rn.append(error)
-            print("x = " , self.m_node_x[i] , "误差R = " , Rn[i])
+            # print("x = " , self.m_node_x[i] , "误差R = " , Rn[i])
         
         mean = np.mean(Rn)
         self.MEAN[2] = mean
@@ -202,11 +206,78 @@ class Interpolation:
 
 #分段线性插值
 
+    def Piecewiselinear(self, x):
+    
+        index = -1
+    
+    # 找出x所在的区间
+        for i in range(self.num_points):
+            if x <= self.x[i]:
+                index = i - 1
+                break
+    
+        if index == -1:
+            return None  # 若x超出区间，则返回None或其他值
+    
+    # 插值计算
+        result = (x - self.x[index + 1]) * self.y[index] / float((self.x[index] - self.x[index + 1])) + \
+        (x - self.x[index]) * self.y[index + 1] / float((self.x[index + 1] - self.x[index]))
+        
+        # print("分段线性插值结果：x = ", x , ", y = ", result)
+    
+        return result
+
+
+    def PiecewiselinearError(self):
+        Rn = []
+        for i in range(self.exp_points): 
+            self.m_Piecewiselinear_y[i] = self.Piecewiselinear(self.m_node_x[i])
+            error = abs(self.func(self.m_node_x[i]) - self.m_Piecewiselinear_y[i])
+            Rn.append(error)
+            # print("x = " , self.m_node_x[i] , "误差R = " , Rn[i])
+        
+        mean = np.mean(Rn)
+        self.MEAN[3] = mean
+        print("分段线性插值平均误差：", mean) 
 
 
 #分段三次Hermite插值
+    def Hermite(self,x):
+    
+    # 计算导数，采用有限差分方法（可以改进为其他计算导数的方法）
+        
+        derivatives = [(self.y[i+1] - self.y[i]) / (self.x[i+1] - self.x[i]) for i in range(self.num_points-1)]
+    
+    # 增加一个最后的导数，保证与最后一段区间对应
+        derivatives.append(derivatives[-1])
 
+    # 构建 Hermite 插值函数
+        def hermite_interval(x,x_i, x_i1, y_i, y_i1, d_i, d_i1):
+            a1 = (1 + 2 * (x - x_i) / (x_i1 - x_i)) * ((x - x_i1) / (x_i - x_i1))**2
+            a2 = (1 + 2 * (x - x_i1) / (x_i - x_i1)) * ((x - x_i) / (x_i1 - x_i))**2
+            b1 = (x - x_i) * ((x - x_i1) / (x_i - x_i1))**2
+            b2 = (x - x_i1) * ((x - x_i) / (x_i1 - x_i))**2
+            return a1 * y_i + a2 * y_i1 + b1 * d_i + b2 * d_i1
 
+    # 构建每一段的 Hermite 插值多项式，并返回函数
+        
+        for i in range(self.num_points-1):
+            if self.x[i] <= x <= self.x[i + 1]:
+                h = hermite_interval(x,self.x[i], self.x[i+1], self.y[i], self.y[i+1], derivatives[i], derivatives[i+1])
+                # print("Hermite插值结果：x = ", x , ", y = ", h)
+                return h
+    
+    def HermiteError(self):
+        Rn = []
+        for i in range(self.exp_points): 
+            self.m_Hermite_y[i] = self.Hermite(self.m_node_x[i])
+            error = abs(self.func(self.m_node_x[i]) - self.m_Hermite_y[i])
+            Rn.append(error)
+            # print("x = " , self.m_node_x[i] , "误差R = " , Rn[i])
+        
+        mean = np.mean(Rn)
+        self.MEAN[4] = mean
+        print("Hermite插值平均误差：", mean)
 
 
     def plot_interpolation_vs_target(self):
@@ -223,27 +294,38 @@ class Interpolation:
         exp_y_interp1 = np.zeros(self.exp_points)
         exp_y_interp2 = np.zeros(self.exp_points) 
         exp_y_interp3 = np.zeros(self.exp_points) 
+        exp_y_interp4 = np.zeros(self.exp_points)  
+        exp_y_interp5 = np.zeros(self.exp_points)  
         
         for i in range(self.exp_points):
             exp_y_target[i] = self.func(self.m_node_x[i])  # 目标函数值
             exp_y_interp1[i] = self.m_Vandermonde_y[i]  
             exp_y_interp2[i] = self.m_lagrange_y[i]
             exp_y_interp3[i] = self.m_Newton_y[i]
+            exp_y_interp4[i] = self.m_Piecewiselinear_y[i] 
+            exp_y_interp5[i] = self.m_Hermite_y[i] 
 
     # 3. 绘制目标函数的精细图像
         plt.figure(figsize=(10, 6))
         plt.plot(m_100_x, m_100_y_target, label='目标函数 (精细)', color='blue')
 
     # 4. 绘制在 m 个实验点上的插值函数
-        # plt.plot(self.m_node_x, exp_y_interp1, 'o-', label='范德蒙德插值函数', color='red', linestyle='--')
-        # plt.plot(self.m_node_x, exp_y_interp2, 'o-', label='拉格朗日插值函数', color='green', linestyle='-.')
+        plt.plot(self.m_node_x, exp_y_interp1, 'o-', label='范德蒙德插值函数', color='red', linestyle='--')
+        plt.plot(self.m_node_x, exp_y_interp2, 'o-', label='拉格朗日插值函数', color='green', linestyle='-.')
         plt.plot(self.m_node_x, exp_y_interp3, 'o-', label='牛顿插值函数', color='yellow', linestyle='--')
+        plt.plot(self.m_node_x, exp_y_interp4, 'o-', label='分段线性插值函数', color='black', linestyle='-.')
+        plt.plot(self.m_node_x, exp_y_interp5, 'o-', label='分段三次Hermite插值函数', color='pink', linestyle=':')
+
 
     # 6. 图例和标题
         plt.legend()
         # plt.title('范德蒙德多项式插值')
         # plt.title('拉格朗日多项式插值') 
-        plt.title('牛顿多项式插值') 
+        # plt.title('牛顿多项式插值')
+        # plt.title('分段线性多项式插值') 
+        # plt.title('分段三次Hermite插值')
+        plt.title('各种插值对比函数曲线') 
+        
         plt.xlabel('x')
         plt.ylabel('函数值')
         plt.grid()
