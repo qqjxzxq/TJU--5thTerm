@@ -16,3 +16,13 @@
     运行：
         1.不使用批量测试脚本：python CurveFitting1.py  ,然后根据命令行提示输入即可
         2.批量测试：python test_curve_fitting1.py ,测试数据在函数内部传入
+
+2.2
+    源代码：CurveFitting2.py
+    批量脚本测试函数：test_curve_fitting2.py
+    运行：
+        1.不使用批量测试脚本：python CurveFitting2.py  ,然后根据命令行提示输入即可
+        2.批量测试：python test_curve_fitting2.py ,测试数据在函数内部传入
+
+选做：RANSAC算法
+    源代码: CurveFitting3.py

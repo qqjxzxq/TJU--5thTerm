@@ -26,6 +26,7 @@ class CurveFitting:
         return fx
 
     # 随机生成 m 个实验点（并添加 Y 值扰动）
+    # 随机生成 m 个实验点（并添加 Y 值扰动）
     def random_m_exp(self):
         N = np.linspace(self.start, self.end, max(self.exp_points * 10, self.exp_points))
         self.m_node_x = sorted(random.sample(list(N), self.exp_points))
@@ -33,6 +34,9 @@ class CurveFitting:
 
         # 添加较小的随机扰动
         self.m_node_y_perturbed = [y + random.uniform(-0.1, 0.1) for y in self.m_node_y]
+
+        # 使用扰动后的 Y 值作为最终实验点
+        self.m_node_y = self.m_node_y_perturbed
 
     # 最小二乘法拟合（不调用库）
     def leastsq(self, x_vals, y_vals, order):
@@ -109,13 +113,25 @@ class CurveFitting:
 
 
 # 程序入口
-a, b = input("输入插值区间 (如 -1 1)：").split()
-c, d, e, f = input("输入函数参数 (如 1 2 3 4)：").split()
-n = int(input("输入采样个数 n："))
-m = int(input("输入实验点个数 m："))
 
-# 构造插值对象，并自动完成实验点生成、拟合和可视化
-curve_fitting = CurveFitting(
-    start=int(a), end=int(b), num_points=n + 1,
-    func_params=(c, d, e, f), exp_points=m
-)
+if __name__ == "__main__":
+    import sys
+    # 检查是否有命令行参数传入，用于批量测试
+    if len(sys.argv) > 1:
+        start, end = int(sys.argv[1]), int(sys.argv[2])
+        a, b, c, d = map(int, sys.argv[3:7])
+        num_points = int(sys.argv[7])
+        exp_points = int(sys.argv[8])
+        
+    else:
+        #命令行输入
+        a, b = input("输入插值区间 (如 -1 1)：").split()
+        c, d, e, f = input("输入函数参数 (如 1 2 3 4)：").split()
+        n = int(input("输入采样个数 n："))
+        m = int(input("输入实验点个数 m："))
+
+        # 构造插值对象，并自动完成实验点生成、拟合和可视化
+        curve_fitting = CurveFitting(
+        start=int(a), end=int(b), num_points=n + 1,
+        func_params=(c, d, e, f), exp_points=m
+        )

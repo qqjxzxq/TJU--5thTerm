@@ -5,23 +5,23 @@ import random
 from sympy import symbols, lambdify, sin, cos
 
 plt.rcParams['font.sans-serif'] = ['Arial Unicode MS']
+
 class CurveFitting:
-    def __init__(self, start, end, num_points, func_params, exp_points, order, noise_level):
+    def __init__(self, start, end, num_points, func_params, exp_points, order, noise_level, max_iters=1000, sigma=0.5):
         self.start = start
         self.end = end
         self.num_points = num_points
         self.func_params = func_params
         self.exp_points = exp_points
-        self.order = order  # 多项式阶次
+        self.order = order  
         self.noise_level = noise_level
+        self.max_iters = max_iters  
+        self.sigma = sigma  
 
         # 初始化：生成实验点，拟合并可视化
         self.random_m_exp()
-        # self.fit_func, self.coefficients = self.leastsq()
-        # print("拟合多项式的系数：", self.coefficients)
-
-        self.calculate_errors()
-        self.calculate_noisy_errors()  # 计算带噪声的误差
+        self.ransac()  
+        self.calculate_errors()  # 计算误差
         self.plot()
 
     def func(self, x):
@@ -37,61 +37,61 @@ class CurveFitting:
         noise = np.random.normal(0, self.noise_level, self.exp_points)
         self.m_node_y_noisy = [y + n for y, n in zip(self.m_node_y, noise)]
 
-    def leastsq(self,Y):
-        matA = np.zeros((self.order + 1, self.order + 1))
-        matB = np.zeros(self.order + 1)
+    def ransac(self):
+        best_coefficients = None
+        max_inliers = 0
 
-        for i in range(self.order + 1):
-            for j in range(self.order + 1):
-                matA[i, j] = sum(x ** (i + j) for x in self.m_node_x)
-            matB[i] = sum(y * (x ** i) for x, y in zip(self.m_node_x, Y))
+        for _ in range(self.max_iters):
+            sample_indices = random.sample(range(self.exp_points), self.order + 1)
+            x_sample = [self.m_node_x[i] for i in sample_indices]
+            y_sample = [self.m_node_y_noisy[i] for i in sample_indices]
 
-        coefficients = np.linalg.solve(matA, matB)
-        
+            coefficients = np.polyfit(x_sample, y_sample, self.order)
+
+            inliers = 0
+            for i in range(self.exp_points):
+                y_estimated = np.polyval(coefficients, self.m_node_x[i])
+                if abs(y_estimated - self.m_node_y_noisy[i]) < self.sigma:
+                    inliers += 1
+
+            if inliers > max_inliers:
+                max_inliers = inliers
+                best_coefficients = coefficients
+
+        self.coefficients = best_coefficients
+        print("拟合多项式的系数：", self.coefficients)
+
         t = symbols('t')
-        fit_func = sum(coeff * (t ** i) for i, coeff in enumerate(coefficients))
-        return lambdify(t, fit_func), coefficients
+        self.fit_func = lambdify(t, sum(c * (t ** i) for i, c in enumerate(reversed(self.coefficients))))
 
     def calculate_errors(self):
-        self.fit_func, self.coefficients = self.leastsq(self.m_node_y) 
-        y_fit = [self.fit_func(x) for x in self.m_node_x]
-        errors = [(y - y_fit_val) ** 2 for y, y_fit_val in zip(self.m_node_y, y_fit)]
-        self.sse = sum(errors)
-        self.mse = self.sse / len(self.m_node_x)
-        print(f"[无扰动] 均方误差 (MSE)：{self.mse}")
-        print(f"[无扰动] 平方误差和 (SSE)：{self.sse}")
-
-    def calculate_noisy_errors(self):
-        self.fit_func, self.coefficients = self.leastsq(self.m_node_y_noisy)
-        y_fit_noisy = [self.fit_func(x) for x in self.m_node_x]  # 拟合噪声后的数据
-        errors_noisy = [(y_noisy - y_fit_val) ** 2 for y_noisy, y_fit_val in zip(self.m_node_y_noisy, y_fit_noisy)]
-        self.sse_noisy = sum(errors_noisy)
+        y_fit_noisy = [self.fit_func(x) for x in self.m_node_x]
+        errors = [(y_noisy - y_fit_val) ** 2 for y_noisy, y_fit_val in zip(self.m_node_y_noisy, y_fit_noisy)]
+        
+        self.sse_noisy = sum(errors)
         self.mse_noisy = self.sse_noisy / len(self.m_node_x)
-        print(f"[有扰动] 均方误差 (MSE)：{self.mse_noisy}")
-        print(f"[有扰动] 平方误差和 (SSE)：{self.sse_noisy}")
+
+        print(f"[RANSAC] 均方误差 (MSE)：{self.mse_noisy}")
+        print(f"[RANSAC] 平方误差和 (SSE)：{self.sse_noisy}")
 
     def plot(self):
         x_vals = np.linspace(self.start, self.end, 100)
         y_vals = [self.func(x) for x in x_vals]
         y_fit_vals = [self.fit_func(x) for x in x_vals]
-        y_fit_noisy_vals = [self.fit_func(x) for x in x_vals]  # 使用相同的拟合函数
 
         plt.plot(x_vals, y_vals, 'r-', label='原始函数')
-        plt.plot(x_vals, y_fit_vals, 'g--', label='无扰动拟合')
-        plt.plot(x_vals, y_fit_noisy_vals, 'b-.', label='有扰动拟合')  # 使用相同的拟合函数
-        plt.scatter(self.m_node_x, self.m_node_y, color='m', label='实验点 (无扰动)')
+        plt.plot(x_vals, y_fit_vals, 'g--', label='RANSAC拟合')
         plt.scatter(self.m_node_x, self.m_node_y_noisy, color='c', label='实验点 (有扰动)', marker='x')
         plt.legend()
         plt.xlabel('x')
         plt.ylabel('y')
-        plt.title('最小二乘法多项式拟合')
+        plt.title('RANSAC 最小二乘法拟合')
         plt.grid(True)
         plt.show()
 
 if __name__ == "__main__":
     import sys
 
-    # 检查是否有命令行参数传入，用于批量测试
     if len(sys.argv) > 1:
         start, end = int(sys.argv[1]), int(sys.argv[2])
         a, b, c, d = map(int, sys.argv[3:7])
@@ -100,7 +100,6 @@ if __name__ == "__main__":
         order = int(sys.argv[9])
         noise_level = float(sys.argv[10])
     else:
-        # 命令行输入
         start, end = map(int, input("输入插值区间 (如 -1 1)：").split())
         a, b, c, d = map(int, input("输入函数参数 (如 1 2 3 4)：").split())
         num_points = int(input("输入采样个数 n：")) + 1
@@ -110,6 +109,6 @@ if __name__ == "__main__":
 
     curve_fitting = CurveFitting(
         start=start, end=end, num_points=num_points,
-        func_params=(a, b, c, d), exp_points=exp_points, 
+        func_params=(a, b, c, d), exp_points=exp_points,
         order=order, noise_level=noise_level
     )

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # 保存图片路径
-save_dir = "/Users/tanqianjian/Desktop/数值计算/homework3/leastsq_picture"
+save_dir = "/Users/tanqianjian/Desktop/数值计算/homework3/leastsq_picture1"
 os.makedirs(save_dir, exist_ok=True)  # 自动创建目录
 
 def batch_test():
