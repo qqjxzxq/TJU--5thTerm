@@ -66,7 +66,7 @@ print(result_rounded)
 
 
 # 随机生成 n 阶方阵 A 和非零向量 b
-n = 20  # 你可以修改这个值
+n = 25  # 你可以修改这个值
 A = np.random.randint(-100, 100, size=(n, n)).astype(float)  # 随机生成 n x n 方阵
 b = np.random.randint(-100, 100, size=(n,)).astype(float)  # 随机生成 n 维非零向量
 

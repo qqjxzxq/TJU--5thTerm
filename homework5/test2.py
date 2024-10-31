@@ -1,53 +1,75 @@
 import numpy as np
 
-# 测试输入
-A = np.array([
-    [30, 33, -43, -11, -38, -29, 37, 28, 23],
-    [-480, -523, 644, 128, 621, 480, -618, -489, -329],
-    [60, 266, -1862, -1991, 464, 546, -968, -1567, 1652],
-    [540, 624, -782, 290, -893, 123, 567, 5, -122],
-    [-450, -675, 2245, 2326, -1512, 1230, -822, 129, -189],
-    [-300, -120, -1114, -1295, 1946, 302, -376, -1540, -609],
-    [1080, 998, 508, 2460, -1628, -1358, 2896, 2828, -2002],
-    [-1080, -1408, 3340, 2267, 21, -1202, 866, -2690, -1351],
-    [-300, -435, 1594, 1685, 340, 2279, -27, 2917, -2336]
-], dtype=float)
+# 输入矩阵的行列数
+input001 = list(map(int, input("请输入矩阵的行列数（例如：3）: ").split()))
+n = int(input001[0])
 
-b = np.array([188, -3145, -4994, 680, 7845, 1876, 9712, -11599, 10127], dtype=float).reshape(-1, 1)
+# 输入矩阵 NxN
+a = np.zeros((n, n), dtype=np.double)
+print("请输入矩阵的每一行元素（以空格分隔）:")
+for r in range(n):
+    a[r, :] = np.array(input().split(), dtype=np.double)
 
-n = A.shape[0]
+# 输入常数矩阵 b
+b = np.zeros((n, 1), dtype=np.double)
+print("输入常数矩阵 b 的每一个元素:")
+for r in range(n):
+    b[r] = np.array(input(), dtype=np.double)
 
 # LU分解
 for i in range(n):
-    max_row = i
-    for k in range(i + 1, n):
-        if abs(A[k][i]) > abs(A[max_row][i]):
-            max_row = k
-    # 交换行
-    if max_row != i:
-        A[[i, max_row]] = A[[max_row, i]]
-        b[[i, max_row]] = b[[max_row, i]]
+    max_row = i  # 换行标记符
+    for i1 in range(i, n):
+        # 找到该列元素中的最大值
+        if a[max_row][i] < a[i1][i]:
+            max_row = i1
+    # 若没有交换行元素
+    if max_row == i:
+        for k in range(i, n - 1):
+            x = a[k + 1][i] / a[i][i]
+            # 给下三角的一个元素赋值
+            a[k + 1][i] = x
+            # 计算上三角i+1行的右边值
+            for m in range(i + 1, n):
+                a[k + 1][m] = a[k + 1][m] - x * a[i][m]
+    else:
+        # a矩阵交换两行
+        for i2 in range(i, n):
+            temp = a[i][i2]
+            a[i][i2] = a[max_row][i2]
+            a[max_row][i2] = temp
+        # b矩阵交换两行
+        temp = b[max_row][0]
+        b[max_row][0] = b[i][0]
+        b[i][0] = temp
+        # a矩阵交换两行
+        for i3 in range(0, i):
+            temp = a[i][i3]
+            a[i][i3] = a[max_row][i3]
+            a[max_row][i3] = temp
+        for k in range(i, n - 1):
+            x = a[k + 1][i] / a[i][i]
+            a[k + 1][i] = x
+            for m in range(i + 1, n):
+                a[k + 1][m] = a[k + 1][m] - x * a[i][m]
 
-    for k in range(i + 1, n):
-        factor = A[k][i] / A[i][i]
-        A[k][i] = factor
-        for j in range(i + 1, n):
-            A[k][j] -= factor * A[i][j]
+print("LU分解后的矩阵 A:")
+print(a)
 
-# 向前替代法求解
+# 使用向前替代法求解方程
 for i in range(1, n):
-    for j in range(i):
-        b[i] -= A[i][j] * b[j]
+    x = 0
+    for i1 in range(0, i):
+        x = a[i][i1] * b[i1][0] + x
+    b[i] = (b[i][0] - x)
 
 # 回代法
-x = np.zeros((n, 1))
-x[-1] = b[-1] / A[-1][-1]
+b[n - 1][0] = b[n - 1][0] / a[n - 1][n - 1]
 for i in range(n - 2, -1, -1):
-    sum_ax = 0
-    for j in range(i + 1, n):
-        sum_ax += A[i][j] * x[j]
-    x[i] = (b[i] - sum_ax) / A[i][i]
+    x = 0
+    for i1 in range(i, n - 1):
+        x = x + a[i][i1 + 1] * b[i1 + 1][0]
+    b[i][0] = (b[i][0] - x) / a[i][i]
 
-# 输出结果
-print("解 x:")
-print(np.round(x, 2))
+print("解 b:")
+print(b)

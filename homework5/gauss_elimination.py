@@ -26,7 +26,7 @@ def gauss_elimination(A, b):
 
 # 测试输入
 A = np.array([
-    [31, 13, 0, 0, 0, -10, 0, 0, 0],
+    [31, -13, 0, 0, 0, -10, 0, 0, 0],
     [-13, 35, -9, 0, -11, 0, 0, 0, 0],
     [0, -9, 31, -10, 0, 0, 0, 0, 0],
     [0, 0, -10, 79, -30, 0, 0, 0, -9],
@@ -38,6 +38,8 @@ A = np.array([
 ], dtype=float)
 
 b = np.array([-15, 27, -23, 0, -20, 12, -7, 7, 10], dtype=float)
+
+
 
 # 执行消元法
 Ab, x = gauss_elimination(A, b)
@@ -69,7 +71,7 @@ def random_gauss_elimination(n):
     return formatted_Ab_random, formatted_x_random
 
 # 测试随机生成
-n = 20  # 你可以选择更大的 n
+n = 25  # 你可以选择更大的 n
 Ab_random, x_random = random_gauss_elimination(n)
 
 # 输出格式化的结果
